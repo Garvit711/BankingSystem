@@ -25,6 +25,7 @@ func main() {
 
 	r := gin.Default()
 	r.POST("/auth/register", auth.Register(pool))
+	r.POST("/auth/login", auth.Login(pool, cfg.JWTSecret))
 
 	log.Fatal(r.Run(":" + cfg.Port))
 }
