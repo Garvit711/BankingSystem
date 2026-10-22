@@ -55,6 +55,12 @@ func main() {
 	protected.GET("/accounts/:id", accountHandler.Get)
 }
 
+
+
+if os.Getenv("ENABLE_DEV_ROUTES") == "true" {
+	protected.POST("/accounts/:id/deposit", accountHandler.Deposit)
+}
+
 	srv := &http.Server{Addr: ":" + cfg.Port, Handler: r}
 
 	go func() {

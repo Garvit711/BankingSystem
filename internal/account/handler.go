@@ -59,3 +59,29 @@ func (h *Handler) Get(c *gin.Context) {
 	}
 	platform.RespondJSON(c, http.StatusOK, acc)
 }
+
+func (h *Handler) Deposit(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		platform.RespondError(c, http.StatusBadRequest, "invalid account id")
+		return
+	}
+
+	var req DepositRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		platform.RespondError(c, http.StatusBadRequest, "amount must be a positive number")
+		return
+	}
+
+	acc, err := h.svc.Deposit(c.Request.Context(), id, auth.UserID(c), req.Amount)
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			platform.RespondError(c, http.StatusNotFound, "account not found")
+			return
+		}
+		log.Printf("deposit failed: %v", err)
+		platform.RespondError(c, http.StatusInternalServerError, "internal error")
+		return
+	}
+	platform.RespondJSON(c, http.StatusOK, acc)
+}

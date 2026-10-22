@@ -69,3 +69,48 @@ func (r *Repository) GetByIDAndUser(ctx context.Context, id, userID int64) (Acco
 	}
 	return a, nil
 }
+
+
+
+func (r *Repository) Deposit(ctx context.Context, accountID, userID, amount int64) (Account, error) {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return Account{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	var a Account
+	err = tx.QueryRow(ctx,
+		`UPDATE accounts SET balance = balance + $1
+		 WHERE id = $2 AND user_id = $3
+		 RETURNING id, user_id, account_number, currency, balance, created_at`,
+		amount, accountID, userID,
+	).Scan(&a.ID, &a.UserID, &a.AccountNumber, &a.Currency, &a.Balance, &a.CreatedAt)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Account{}, ErrNotFound
+		}
+		return Account{}, err
+	}
+
+	var txID int64
+	err = tx.QueryRow(ctx,
+		`INSERT INTO transactions (type) VALUES ('deposit') RETURNING id`,
+	).Scan(&txID)
+	if err != nil {
+		return Account{}, err
+	}
+
+	_, err = tx.Exec(ctx,
+		`INSERT INTO ledger_entries (transaction_id, account_id, amount) VALUES ($1, $2, $3)`,
+		txID, accountID, amount,
+	)
+	if err != nil {
+		return Account{}, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return Account{}, err
+	}
+	return a, nil
+}

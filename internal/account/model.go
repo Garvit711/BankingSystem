@@ -10,3 +10,7 @@ type Account struct {
 	Balance       int64     `json:"balance"`
 	CreatedAt     time.Time `json:"created_at"`
 }
+
+type DepositRequest struct {
+	Amount int64 `json:"amount" binding:"required,gt=0"`
+}

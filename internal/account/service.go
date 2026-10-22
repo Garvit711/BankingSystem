@@ -21,3 +21,7 @@ func (s *Service) List(ctx context.Context, userID int64) ([]Account, error) {
 func (s *Service) Get(ctx context.Context, id, userID int64) (Account, error) {
 	return s.repo.GetByIDAndUser(ctx, id, userID)
 }
+
+func (s *Service) Deposit(ctx context.Context, accountID, userID, amount int64) (Account, error) {
+	return s.repo.Deposit(ctx, accountID, userID, amount)
+}
